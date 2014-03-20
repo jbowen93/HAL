@@ -1,0 +1,33 @@
+LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
+LOCAL_MODULE  :=  hal
+LOCAL_SRC_FILES := libhal.so
+#LOCAL_CPPFLAGS += -std=c++11
+include $(PREBUILT_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE  := andcam
+LOCAL_SRC_FILES := libAndCam.a
+include $(PREBUILT_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE := AndNodeCam
+LOCAL_SRC_FILES := AndNodeCam.cpp
+#LOCAL_SRC_FILES += AndCam.h
+##LOCAL_SRC_FILES += libAndCam.a
+#LOCAL_SRC_FILES += libhal.so
+LOCAL_C_INCLUDES := /Users/faradazerage/code/rslam/rslam/CoreDev/HAL
+LOCAL_C_INCLUDES += /Users/faradazerage/code/rslam/rslam/CoreDev/HAL/PbMsgs
+LOCAL_C_INCLUDES += /Users/faradazerage/code/rslam/rslam/CoreDev/abuild/HAL
+LOCAL_C_INCLUDES += /Users/faradazerage/code/android-dev/Toolchain/user/include
+LOCAL_C_INCLUDES += /Users/faradazerage/code/android-dev/Toolchain/include/c++/4.8
+LOCAL_C_INCLUDES += /Users/faradazerage/code/android-dev/Toolchain/include/c++/4.8/arm-linux-androideabi
+LOCAL_C_INCLUDES += $(LOCAL_PATH)
+LOCAL_LDLIBS += $(LOCAL_PATH) -lhal
+LOCAL_SHARED_LIBRARIES := libhal
+LOCAL_STATIC_LIBRARIES := libAndCam
+#LOCAL_LDLIBS += -lgnustl_static -lsupc++
+#LOCAL_LDLIBS += hal
+#LOCAL_LDLIBS := libAndCam.a
+#LOCAL_LDLIBS := -llibhal.so
+include $(BUILD_SHARED_LIBRARY)
