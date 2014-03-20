@@ -217,6 +217,7 @@ bool node::call_rpc(const std::string& node_name,
   auto it = resource_table_.find(rpc_resource);
   if (it == resource_table_.end()) {
     // unknown method, fail
+    LOG(ERROR) << "Unknown resource called " << rpc_resource;
     return false;
   }
   std::string host_and_port = resource_table_[rpc_resource];
@@ -234,6 +235,7 @@ bool node::call_rpc(const std::string& node_name,
     try {
       socket->socket->connect(("tcp://" + host_and_port).c_str());
     } catch(const zmq::error_t& error) {
+      LOG(ERROR) << "Failed to connect to " << host_and_port;
       return false;
     }
     rpc_sockets_[node_name] = socket;
@@ -242,6 +244,7 @@ bool node::call_rpc(const std::string& node_name,
   std::shared_ptr<std::mutex> socket_mutex = rpc_mutex(node_name);
 
   if (!socket->socket->connected()) {
+    LOG(ERROR) << "Socket is not connected in call_rpc";
     return false;
   }
 
@@ -254,6 +257,7 @@ bool node::call_rpc(const std::string& node_name,
   if (success) {
     socket->Tic();
   }
+  LOG(INFO) << "rpc called: " << success;
   return success;
 }
 
@@ -279,7 +283,7 @@ bool node::call_rpc(NodeSocket socket,
   std::memcpy((char*)ZmqReq.data() + sizeof(n), sFName.c_str(), n);
   if (!msg_req.SerializeToArray((char*)ZmqReq.data() + sizeof(n) + n,
                                 msg_req.ByteSize())) {
-    // error serializing protobuf to ZMQ message
+    LOG(ERROR) << "error serializing protobuf to ZMQ message";
     return false;
   }
 
@@ -319,7 +323,7 @@ bool node::call_rpc(NodeSocket socket,
         double dTimeTaken = _TocMS(dStartTime);
         if (dTimeTaken >= nTimeoutMS) {
           // timeout... error receiving
-          LOG(debug_level_) << "Warning: Call timed out waiting for reply ("
+          LOG(ERROR) << "Warning: Call timed out waiting for reply ("
                             << dTimeTaken << " ms > " << nTimeoutMS << " ms).";
           return false;
         }
@@ -333,7 +337,7 @@ bool node::call_rpc(NodeSocket socket,
   }
 
   if (!msg_rep.ParseFromArray(ZmqRep.data(), ZmqRep.size())) {
-    // bad protobuf format
+    LOG(ERROR) << "bad protobuf format. Failed to parse " << ZmqRep.size() << " bytes.";
     return false;
   }
 
@@ -826,6 +830,7 @@ void node::RPCThread() {
       Rep->Clear();
 
       if (!Req->ParseFromArray((char*)(ZmqReq.data()) + PbOffset, PbByteSize)) {
+        LOG(ERROR) << "Failed to parse RPC request for " << FuncName;
         continue;
       }
 
@@ -833,9 +838,11 @@ void node::RPCThread() {
       Func(*(Req), *(Rep), pRPC->UserData);
 
       // send reply
-      zmq::message_t ZmqRep(Rep->ByteSize());
-      if (!Rep->SerializeToArray(ZmqRep.data(), Rep->ByteSize())) {
-        // error serializing protobuf to ZMQ message
+      auto size = Rep->ByteSize();
+      zmq::message_t ZmqRep(size);
+      LOG(INFO) << "Serializing " << size << " bytes for response to " << FuncName;
+      if (!Rep->SerializeToArray(ZmqRep.data(), size)) {
+        LOG(ERROR) << "error serializing protobuf to ZMQ message";
       }
       socket_->send(ZmqRep);
     } else {
@@ -999,6 +1006,8 @@ bool node::ConnectNode(const std::string& host, uint16_t port,
   for (const msg::ResourceLocator& r : rep->resource_table().urls()) {
     resource_table_[r.resource()] = r.address();
   }
+  _PropagateResourceTable();
+  _PrintResourceLocatorTable();
   return true;
 }
 

@@ -4,6 +4,8 @@ endif()
 
 # Configure build environment to automatically generate APK's instead of executables.
 if(ANDROID AND NOT TARGET apk)
+  find_library(GNUSTL_SHARED_LIBRARY gnustl_shared)
+
     # virtual targets which we'll add apks and push actions to.
     add_custom_target( apk )
     add_custom_target( push )
@@ -217,4 +219,9 @@ void ANativeActivity_onCreate(ANativeActivity * app, void * ud, size_t udsize) {
         endforeach()
     endmacro()
 
+  macro(add_library lib_name)
+      _add_library(${lib_name} SHARED ${ARGN})
+        _target_link_libraries(${lib_name} log android z -pthread ${GNUSTL_SHARED_LIBRARY}
+    )
+  endmacro()
 endif()
