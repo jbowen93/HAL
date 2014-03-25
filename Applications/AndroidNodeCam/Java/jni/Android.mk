@@ -1,15 +1,15 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE  :=  hal
-LOCAL_SRC_FILES := libhal.so
+LOCAL_SRC_FILES := /Users/faradazerage/code/rslam/rslam/CoreDev/libs/armeabi-v7a/libhal.so
 LOCAL_CPPFLAGS += -std=c++11
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE  := andcam
-LOCAL_SRC_FILES := libAndCam.a
+LOCAL_SRC_FILES := libAndCam.so
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)
-include $(PREBUILT_STATIC_LIBRARY)
+include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := boostthread
@@ -18,18 +18,18 @@ include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := node
-LOCAL_SRC_FILES := libnode.so
+LOCAL_SRC_FILES := /Users/faradazerage/code/rslam/rslam/CoreDev/libs/armeabi-v7a/libnode.so
 include $(PREBUILT_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := pbmsgs
-LOCAL_SRC_FILES := libpbmsgs.so
+LOCAL_SRC_FILES := /Users/faradazerage/code/rslam/rslam/CoreDev/libs/armeabi-v7a/libpbmsgs.so
 include $(PREBUILT_SHARED_LIBRARY)
 
-include $(CLEAR_VARS)
-LOCAL_MODULE := rightstdc
-LOCAL_SRC_FILES := /Users/faradazerage/code/android-dev/Toolchain/arm-linux-androideabi/lib/armv7-a/libstdc++.a
-include $(PREBUILD_STATIC_LIBRARY)
+#include $(CLEAR_VARS)
+#LOCAL_MODULE := rightstdc
+#LOCAL_SRC_FILES := /Users/faradazerage/code/android-dev/Toolchain/arm-linux-androideabi/lib/armv7-a/libstdc++
+#include $(PREBUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := opencvjava
@@ -45,7 +45,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := miniglog
 LOCAL_SRC_FILES := /Users/faradazerage/code/rslam/rslam/CoreDev/libs/armeabi-v7a/libminiglog.so 
 include $(PREBUILT_SHARED_LIBRARY)
-    
+
 include $(CLEAR_VARS)
 LOCAL_MODULE := AndNodeCam
 LOCAL_SRC_FILES := AndNodeCam.cpp
@@ -61,9 +61,9 @@ LOCAL_SHARED_LIBRARIES += gnushared
 LOCAL_SHARED_LIBRARIES += opencvjava
 LOCAL_SHARED_LIBRARIES += miniglog
 LOCAL_SHARED_LIBRARIES += pbmsgs
-LOCAL_STATIC_LIBRARIES := andcam
-LOCAL_STATIC_LIBRARIES += boostthread
-LOCAL_STATIC_LIBRARIES += rightstdc
+LOCAL_SHARED_LIBRARIES += andcam
+LOCAL_STATIC_LIBRARIES := boostthread
+#LOCAL_STATIC_LIBRARIES += rightstdc
 LOCAL_LDLIBS := -llog
 LOCAL_CFLAGS := -D__GXX_EXPERIMENTAL_CXX0X__
 LOCAL_CPPFLAGS  := -g -std=c++11

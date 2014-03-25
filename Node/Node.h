@@ -36,7 +36,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
-#include <thread>
+#include <boost/thread.hpp>
 
 #include <zmq.h>
 #include <google/protobuf/message.h>
@@ -363,10 +363,10 @@ class node {
   bool init_done_;
 
   // Thread for handling rpc
-  std::thread rpc_thread_;
+  boost::thread rpc_thread_;
 
   // Thread for handling heartbeats
-  std::thread heartbeat_thread_;
+  boost::thread heartbeat_thread_;
 
   // Max timeout wait
   double get_resource_table_max_wait_;

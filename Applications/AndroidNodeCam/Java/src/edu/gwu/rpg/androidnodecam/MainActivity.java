@@ -1,7 +1,14 @@
 package edu.gwu.rpg.androidnodecam;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Camera;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -11,6 +18,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 	 Camera mCamera;
 	 SurfaceView mPreview;
 	 AndNodeCam anc;
+	 String ip_address;
 	
 	 
     @Override
@@ -19,7 +27,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         setContentView(R.layout.activity_main);        
 
         anc = new AndNodeCam();
-        anc.InitANC();
+        anc.InitANC( "192.168.137.1", 5555 );
         
         mPreview = (SurfaceView)findViewById(R.id.preview);
         mPreview.getHolder().addCallback(this);
@@ -43,12 +51,12 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 byte[] toSend = new byte[width*height];
                 System.arraycopy(data, 0, toSend, 0, width*height);
 				anc.sendCamData(toSend);
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+//				try {
+//					Thread.sleep(100);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
 			}
 		});
     }

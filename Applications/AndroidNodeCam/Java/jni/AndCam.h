@@ -8,6 +8,8 @@
 #include <PbMsgs/NodeCamMessage.pb.h>
 #include <HAL/Camera/CameraDevice.h>
 
+using namespace std;
+
 void RegsiterCamDevice(RegisterNodeCamReqMsg& req, RegisterNodeCamRepMsg& rep, void* UserData);
 void sendData(char *data, int w, int h, int format, int type);
-bool InitializeNode( void );
+bool InitializeNode( string IP, int port );

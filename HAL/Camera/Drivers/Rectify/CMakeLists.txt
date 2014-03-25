@@ -1,4 +1,5 @@
 find_package( Calibu 0.1 QUIET )
+return()
 if(Calibu_FOUND)
   set( BUILD_Rectify true CACHE BOOL force )
 

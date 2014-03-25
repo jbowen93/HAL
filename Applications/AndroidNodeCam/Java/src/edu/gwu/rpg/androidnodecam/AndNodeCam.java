@@ -3,22 +3,23 @@ package edu.gwu.rpg.androidnodecam;
 public class AndNodeCam {
 
 	static {
+		System.loadLibrary("gnustl_shared");
 		System.loadLibrary("opencv_java");
 		System.loadLibrary("pbmsgs");		
 		System.loadLibrary("miniglog");
 		System.loadLibrary("node");
 		System.loadLibrary("hal");
-		System.loadLibrary("gnustl_shared");
+		System.loadLibrary("AndCam");
 		System.loadLibrary("AndNodeCam");
 	}
 	
 	private native void sendData(byte[] bytes);
 	
-	private native void Initialize();
+	private native void Initialize( String IP, int port);
 	
-	public void InitANC( ) 
+	public void InitANC( String ip_address, int port )
 	{
-		Initialize();
+		Initialize( ip_address, port);
 	}
 	
 	public void sendCamData( byte[] bytes )

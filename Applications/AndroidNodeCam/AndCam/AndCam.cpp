@@ -18,17 +18,22 @@ void RegsiterCamDevice(RegisterNodeCamReqMsg& req, RegisterNodeCamRepMsg& rep, v
   rep.set_channels(channels);
 }
 
-bool InitializeNode( void )
+bool InitializeNode( string IP, int port )
 {
   gCounter = 0;
   width = 640;
   height = 480;
   channels = 1;
 
-  n.set_verbosity(9);
+  n.set_verbosity(-2);
   n.init(string("LocalSim"));
   n.advertise(string("NodeCam"));
   n.provide_rpc(string("RegsiterCamDevice"), &RegsiterCamDevice, NULL);
+
+  msg::GetTableResponse rep;
+  n.ConnectNode( IP, port, &rep);
+
+
 }
 
 void sendData( char* data, int w, int h, int format = pb::PB_LUMINANCE, int type = pb::PB_UNSIGNED_BYTE )
@@ -41,7 +46,7 @@ void sendData( char* data, int w, int h, int format = pb::PB_LUMINANCE, int type
     pbImage->set_width(width);
     pbImage->set_format(pb::PB_LUMINANCE);
     pbImage->set_type(pb::PB_UNSIGNED_BYTE);
-    pbImage->set_timestamp(gCounter);
+    pbImage->set_timestamp(gCounter);    
     pbImage->set_data(data, width*height);
     n.publish(topic, camMsg);
   }

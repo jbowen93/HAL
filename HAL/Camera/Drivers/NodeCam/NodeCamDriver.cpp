@@ -39,16 +39,12 @@ NodeCamDriver::~NodeCamDriver()
 bool NodeCamDriver::Capture( pb::CameraMsg& vImages )
 {
   // here we use max try to avoid infinite wait
-  int iMaxTry=5;
   bool bSuccessFlag = false;
-  while (bSuccessFlag==false && iMaxTry>0){
+  while (bSuccessFlag==false){
     std::cout<<"Going in Battle"<<std::endl;
     std::cout<<m_sTopic<<std::endl;
     if(m_Node.receive(m_sTopic, vImages)==true){
       bSuccessFlag = true;
-    }
-    else{
-      iMaxTry--;
     }
     usleep(100000);
   }
@@ -153,8 +149,7 @@ bool NodeCamDriver::RegisterInHost(const hal::Uri& uri)
   // TODO: Correct names.
   m_sTopic = m_sSimNodeName + "/" + m_sDeviceName;
   mReq.set_uri(uri.ToString());
-  int nTries=0;
-  while(nTries < 5 &&
+  while(
        !m_Node.call_rpc(m_sSimNodeName, "RegsiterCamDevice", mReq, mRep, 100))
   {
     std::cerr << "[NodeCamDriver/RegisterInHost] Error Call Rpc method of '"
@@ -162,7 +157,6 @@ bool NodeCamDriver::RegisterInHost(const hal::Uri& uri)
               << "'. Cannot connect to host!! Please make sure it is running!"
               << std::endl;
     sleep(1);
-    nTries++;
   }
 
   if(mRep.regsiter_flag()==1)

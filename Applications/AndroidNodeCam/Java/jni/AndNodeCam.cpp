@@ -16,8 +16,8 @@ JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_sendData
 }
 
 JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_Initialize
-  (JNIEnv *env, jobject jobj)
+  (JNIEnv *env, jobject jobj, jstring ip_address, jint port)
 {
-    InitializeNode();
+    InitializeNode(env->GetStringUTFChars(ip_address, NULL), (int) port);
 }
 

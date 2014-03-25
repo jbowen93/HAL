@@ -10,14 +10,14 @@ message("CMAKE_C_FLAGS   : ${CMAKE_C_FLAGS}")
 find_package( HAL 0.1 REQUIRED )
 find_package( Node REQUIRED )
 find_package( MINIGLOG REQUIRED )
-find_package( Calibu 0.1 REQUIRED )
+#find_package( Calibu 0.1 REQUIRED )
 
 include_directories( . )
 include_directories( ${HAL_INCLUDE_DIRS} )
 include_directories( ${NODE_INCLUDE_DIRS} )
 include_directories( ${Node_INCLUDE_DIRS} )
 
-add_library( AndCam STATIC AndCam.cpp AndCam.h )
+add_library( AndCam SHARED AndCam.cpp AndCam.h )
 #add_executable( TestCam TestCam.cpp AndCam.h )
 
 target_link_libraries( AndCam ${NODE_LIBRARIES} )

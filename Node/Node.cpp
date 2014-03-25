@@ -155,9 +155,9 @@ bool node::init(std::string node_name) {
                     &_DeleteFromResourceTableFunc, this);
 
   std::lock_guard<std::mutex> lock(mutex_);
-  rpc_thread_ = std::thread(std::bind(&node::RPCThread, this));
+  rpc_thread_ = boost::thread(boost::bind(&node::RPCThread, this));
   usleep(100);  // Sleep to split log messages
-  heartbeat_thread_ = std::thread(std::bind(&node::HeartbeatThread, this));
+  heartbeat_thread_ = boost::thread(boost::bind(&node::HeartbeatThread, this));
 
   // ask avahi who's around, and get their resource tables, also build our table
   _UpdateNodeRegistery();
@@ -267,6 +267,7 @@ bool node::call_rpc(NodeSocket socket,
                     const google::protobuf::Message& msg_req,
                     google::protobuf::Message& msg_rep,
                     unsigned int nTimeoutMS) {
+  LOG(ERROR) <<"inside call_rpc";
   CHECK(init_done_);
   CHECK(socket->connected());
 
@@ -967,6 +968,7 @@ void node::_UpdateNodeRegistery() {
 bool node::ConnectNode(const std::string& host, uint16_t port,
                        msg::GetTableResponse* rep) {
   // Skip if we are already connected to this node
+  debug_level_ = ERROR;
   if (resource_table_.count(_GetAddress(host, port))) return false;
   LOG(debug_level_) << "Connecting to " << host << ":" << port;
 
@@ -985,6 +987,7 @@ bool node::ConnectNode(const std::string& host, uint16_t port,
   req.set_requesting_node_name(node_name_);
   req.set_requesting_node_addr(_GetAddress());
   double timeout = get_resource_table_max_wait_ * 1e3;
+  LOG(debug_level_) << "About to call RPC on socket: ";
   if (!call_rpc(socket, std::shared_ptr<std::mutex>(new std::mutex),
                 "GetResourceTable", req, *rep, timeout)) {
     LOG(ERROR) << "Failed when asking for remote node name";
@@ -1008,6 +1011,7 @@ bool node::ConnectNode(const std::string& host, uint16_t port,
   }
   _PropagateResourceTable();
   _PrintResourceLocatorTable();
+  LOG(debug_level_) << "Finished ConnectNode";
   return true;
 }
 

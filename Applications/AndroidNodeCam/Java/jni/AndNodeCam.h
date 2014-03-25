@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_sendData
 /*
  * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
  * Method:    Initialize
- * Signature: ()V
+ * Signature: (Ljava/lang/String;I)V
  */
 JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_Initialize
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jstring, jint);
 
 #ifdef __cplusplus
 }

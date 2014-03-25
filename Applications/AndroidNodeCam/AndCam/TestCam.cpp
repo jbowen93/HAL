@@ -62,7 +62,7 @@ int main( void )
       exit(1);
     }
     cout<<"About to send image"<<endl;
-    sendData((unsigned char*) (pbIm->at(0)->data()), width, height, pb::PB_LUMINANCE, pb::PB_UNSIGNED_BYTE);
+    sendData((char*) (pbIm->at(0)->data()), width, height, pb::PB_LUMINANCE, pb::PB_UNSIGNED_BYTE);
     usleep(1e5);
   }
   return 0;
