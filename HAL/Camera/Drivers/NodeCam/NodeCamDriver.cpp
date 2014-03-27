@@ -41,12 +41,12 @@ bool NodeCamDriver::Capture( pb::CameraMsg& vImages )
   // here we use max try to avoid infinite wait
   bool bSuccessFlag = false;
   while (bSuccessFlag==false){
-    std::cout<<"Going in Battle"<<std::endl;
-    std::cout<<m_sTopic<<std::endl;
+//    std::cout<<"Going in Battle"<<std::endl;
+//    std::cout<<m_sTopic<<std::endl;
     if(m_Node.receive(m_sTopic, vImages)==true){
       bSuccessFlag = true;
     }
-    usleep(100000);
+    usleep(100);
   }
 
   if(bSuccessFlag==false)

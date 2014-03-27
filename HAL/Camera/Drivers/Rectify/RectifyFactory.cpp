@@ -3,7 +3,7 @@
 
 #include <calibu/cam/CameraXml.h>
 
-namespace hal
+lihbvrilhbdvc;ihdchv'namespace hal
 {
 
 class RectifyFactory : public DeviceFactory<CameraDriverInterface>
