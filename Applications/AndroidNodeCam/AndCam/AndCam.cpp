@@ -5,6 +5,8 @@
 #include <PbMsgs/Image.h>
 #include <PbMsgs/NodeCamMessage.pb.h>
 #include <HAL/Camera/CameraDevice.h>
+#include <HAL/IMU/IMUDevice.h>
+#include <HAL/Utils/TicToc.h>
 #include <android/Log.h>
 
 using namespace std;
@@ -18,11 +20,16 @@ void RegsiterCamDevice(RegisterNodeCamReqMsg& req, RegisterNodeCamRepMsg& rep, v
   rep.set_channels(channels);
 }
 
+bool InitializeLogger( void )
+{
+  logger_.LogToFile("/sdcard/", "sensors");
+}
+
 bool InitializeNode( string IP, int port )
 {
   gCounter = 0;
-  width = 640;
-  height = 480;
+  width = 320;
+  height = 240;
   channels = 1;
 
   n.set_verbosity(-2);
@@ -39,15 +46,61 @@ bool InitializeNode( string IP, int port )
 void sendData( char* data, int w, int h, int format = pb::PB_LUMINANCE, int type = pb::PB_UNSIGNED_BYTE )
 {
   if (data != NULL) {
-    gCounter++;
     pb::CameraMsg camMsg;
     pb::ImageMsg* pbImage = camMsg.add_image();
     pbImage->set_height(height);
     pbImage->set_width(width);
     pbImage->set_format(pb::PB_LUMINANCE);
     pbImage->set_type(pb::PB_UNSIGNED_BYTE);
-    pbImage->set_timestamp(gCounter);    
+    pbImage->set_timestamp(hal::Tic());
     pbImage->set_data(data, width*height);
     n.publish(topic, camMsg);
   }
+}
+
+void logCamData(char *data, int w, int h, int format, int type)
+{
+  if (data != NULL) {
+    pb::CameraMsg camMsg;
+    pb::ImageMsg* pbImage = camMsg.add_image();
+    pbImage->set_height(height);
+    pbImage->set_width(width);
+    pbImage->set_format(pb::PB_LUMINANCE);
+    pbImage->set_type(pb::PB_UNSIGNED_BYTE);
+    pbImage->set_data(data, width*height);
+    pbImage->set_timestamp(hal::Tic());
+
+    pb::Msg pbMsg;
+    pbMsg.mutable_camera()->Swap(&camMsg);
+    logger_.LogMessage(pbMsg);
+  }
+}
+
+
+
+void logIMUData(float ax, float ay, float az, float gr, float gp, float gy, float mx, float my, float mz)
+{
+  pb::ImuMsg imuMsg;
+  pb::VectorMsg vMesg;
+  vMesg.add_data(ax);
+  vMesg.add_data(ay);
+  vMesg.add_data(az);
+  imuMsg.mutable_accel()->Swap(&vMesg);
+
+  vMesg.clear_data();
+  vMesg.add_data(gr);
+  vMesg.add_data(gp);
+  vMesg.add_data(gy);
+  imuMsg.mutable_gyro()->Swap(&vMesg);
+
+  vMesg.clear_data();
+  vMesg.add_data(mx);
+  vMesg.add_data(my);
+  vMesg.add_data(mz);
+  imuMsg.mutable_mag()->Swap(&vMesg);
+
+  pb::Msg pbMsg;
+  pbMsg.set_timestamp(hal::Tic());
+  pbMsg.mutable_imu()->Swap(&imuMsg);
+  logger_.LogMessage(pbMsg);
 }

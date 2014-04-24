@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
  * Method:    sendData
- * Signature: ([B)V
+ * Signature: ([BII)V
  */
 JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_sendData
-  (JNIEnv *, jobject, jbyteArray);
+  (JNIEnv *, jobject, jbyteArray, jint, jint);
 
 /*
  * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
@@ -22,6 +22,38 @@ JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_sendData
  */
 JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_Initialize
   (JNIEnv *, jobject, jstring, jint);
+
+/*
+ * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
+ * Method:    InitializeLogger
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_InitializeLogger
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
+ * Method:    logCamData
+ * Signature: ([BII)V
+ */
+JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_logCamData
+  (JNIEnv *, jobject, jbyteArray, jint, jint);
+
+/*
+ * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
+ * Method:    logIMUData
+ * Signature: (FFFFFFFFF)V
+ */
+JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_logIMUData
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat);
+
+/*
+ * Class:     edu_gwu_rpg_androidnodecam_AndNodeCam
+ * Method:    stopLogging
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_edu_gwu_rpg_androidnodecam_AndNodeCam_stopLogging
+  (JNIEnv *, jobject);
 
 #ifdef __cplusplus
 }
