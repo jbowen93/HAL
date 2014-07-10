@@ -1,0 +1,28 @@
+package pb;
+
+import "Pose.proto";
+import "Image.proto";
+import "Camera.proto";
+import "Matrix.proto";
+
+message RegisterNodeCamReqMsg
+{
+    optional bytes          uri                   =1;
+}
+
+message RegisterNodeCamRepMsg
+{
+    optional int32          time_step              = 1;
+    optional int32          regsiter_flag          = 2;
+    optional int32          width                  = 3;
+    optional int32          height                 = 4;
+    optional int32          channels               = 5;
+    optional MatrixMsg      K                      = 6;
+}
+
+message DensePoseMsg
+{
+    optional int32          time_stamp = 1;
+    optional PoseMsg        pose       = 2;
+    optional CameraMsg         image      = 3;
+}

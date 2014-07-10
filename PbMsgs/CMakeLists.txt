@@ -78,6 +78,7 @@ set( _PROTO_SRCS
     NodeCamMessage.proto
     NodeCar.proto
     BVP.proto
+    DensePose.proto
 )
 
 PROTOBUF_GENERATE_CPP( PROTO_SRCS PROTO_HDRS ${_PROTO_SRCS} )

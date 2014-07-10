@@ -33,6 +33,9 @@ public class NativeCameraInterface
                 }
             });
         Camera.Parameters params = mCamera.getParameters();
+        params.setPreviewFpsRange(30000,30000);
+        params.setAutoWhiteBalanceLock(true);
+        params.setFocusMode(FOCUS_MODE_MACRO);
         params.setPreviewSize(640, 480);
         mCamera.setParameters(params);
     }
