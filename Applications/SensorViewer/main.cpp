@@ -21,13 +21,13 @@ pangolin::DataLog g_PlotLogMag;
 using std::placeholders::_1;
 
 class SensorViewer {
- public:
+public:
   SensorViewer() : num_channels_(0), base_width_(0), base_height_(0),
-                   has_camera_(false), has_imu_(false), has_posys_(false),
-                   has_encoder_(false), has_lidar_(false),
-                   is_running_(true), is_stepping_(false), frame_number_(0),
-                   panel_height_(0),
-                   logger_(pb::Logger::GetInstance())
+    has_camera_(false), has_imu_(false), has_posys_(false),
+    has_encoder_(false), has_lidar_(false),
+    is_running_(true), is_stepping_(false), frame_number_(0),
+    panel_height_(0),
+    logger_(pb::Logger::GetInstance())
   {
   }
 
@@ -65,9 +65,9 @@ class SensorViewer {
     if (has_imu_) {
       pangolin::View& imuView = pangolin::CreateDisplay().
           SetLayout(pangolin::LayoutEqualVertical);
-      imuView.AddDisplay(pangolin::CreatePlotter("Accel", &g_PlotLogAccel));
-      imuView.AddDisplay(pangolin::CreatePlotter("Gryo", &g_PlotLogGryo));
-      imuView.AddDisplay(pangolin::CreatePlotter("Mag", &g_PlotLogMag));
+      //      imuView.AddDisplay(pangolin::CreatePlotter("Accel", &g_PlotLogAccel));
+      //      imuView.AddDisplay(pangolin::CreatePlotter("Gryo", &g_PlotLogGryo));
+      //      imuView.AddDisplay(pangolin::CreatePlotter("Mag", &g_PlotLogMag));
 
       if (has_camera_) {
         cameraView.SetBounds(1.0/3.0, 1.0, 0.0, 1.0);
@@ -76,19 +76,37 @@ class SensorViewer {
     }
 
     pangolin::RegisterKeyPressCallback(
-        pangolin::PANGO_SPECIAL + pangolin::PANGO_KEY_RIGHT,
-        [this]() {
-          is_stepping_ = true;
-        });
+          pangolin::PANGO_SPECIAL + pangolin::PANGO_KEY_RIGHT,
+          [this]() {
+      is_stepping_ = true;
+    });
 
     pangolin::RegisterKeyPressCallback(' ', [&]() {
-        is_running_ = !is_running_;
-      });
+      is_running_ = !is_running_;
+    });
     pangolin::RegisterKeyPressCallback(
-        'l', [this]() {
-          *logging_enabled_ = !*logging_enabled_;
-          frame_number_ = 0;
-        });
+          'l', [this]() {
+      *logging_enabled_ = !*logging_enabled_;
+      frame_number_ = 0;
+    });
+  }
+
+  double normalizedGraylevelVariance(const cv::Mat& src)
+  {
+    //      cv::Scalar mu, sigma;
+    //      cv::meanStdDev(src, mu, sigma);
+
+    //      double focusMeasure = (sigma.val[0]*sigma.val[0]) / mu.val[0];
+    //      return focusMeasure;
+
+    cv::Mat lap;
+    cv::Laplacian(src, lap, CV_64F);
+
+    cv::Scalar mu, sigma;
+    cv::meanStdDev(lap, mu, sigma);
+
+    double focusMeasure = sigma.val[0]*sigma.val[0];
+    return focusMeasure;
   }
 
   void Run() {
@@ -110,6 +128,8 @@ class SensorViewer {
 
       if (go && num_channels_) {
         capture_success = camera_.Capture(*images);
+        fprintf(stdout, "Focus measure: %f\n", normalizedGraylevelVariance( images->at(0)->Mat() ));
+        fflush(stdout);
         if (!got_first_image && capture_success) {
           got_first_image = true;
         }
@@ -139,7 +159,7 @@ class SensorViewer {
           std::shared_ptr<pb::Image> img = images->at(ii);
           if (!glTex[ii].tid && num_channels_) {
             GLint internal_format = (img->Format() == GL_LUMINANCE ?
-                                     GL_LUMINANCE : GL_RGBA);
+                                       GL_LUMINANCE : GL_RGBA);
             // Only initialise now we know format.
             glTex[ii].Reinitialise(img->Width(), img->Height(),
                                    internal_format, true, 0,
@@ -215,7 +235,7 @@ class SensorViewer {
     has_lidar_ = true;
   }
 
- protected:
+protected:
   void RegisterCallbacks() {
     if (has_posys_) {
       posys_.RegisterPosysDataCallback(std::bind(&SensorViewer::Posys_Handler,
@@ -225,7 +245,7 @@ class SensorViewer {
 
     if (has_imu_) {
       imu_.RegisterIMUDataCallback(
-          std::bind(&SensorViewer::IMU_Handler, this, _1));
+            std::bind(&SensorViewer::IMU_Handler, this, _1));
       std::cout << "- Registering IMU device." << std::endl;
     }
 
@@ -320,7 +340,7 @@ class SensorViewer {
     }
   }
 
- private:
+private:
   size_t num_channels_, base_width_, base_height_;
   bool has_camera_, has_imu_, has_posys_, has_encoder_, has_lidar_;
   bool is_running_, is_stepping_;

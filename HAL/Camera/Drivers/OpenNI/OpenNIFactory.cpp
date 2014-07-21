@@ -13,9 +13,9 @@ public:
         Params() = {
             {"size", "640x480", "Capture resolution."},
             {"fps", "30", "Capture framerate."},
-            {"rgb", "true", "Capture RGB image."},
-            {"depth", "true", "Capture depth image."},
-            {"ir", "false", "Capture infrared image."},
+            {"rgb", "false", "Capture RGB image."},
+            {"depth", "false", "Capture depth image."},
+            {"ir", "true", "Capture infrared image."},
             {"align", "false", "Align depth with RGB."},
         };
     }
@@ -24,9 +24,9 @@ public:
     {
         ImageDim Dims       = uri.properties.Get("size", ImageDim(640,480));
         unsigned int nFPS   = uri.properties.Get("fps", 30);
-        bool bRGB           = uri.properties.Get("rgb", true);
-        bool bDepth         = uri.properties.Get("depth", true);
-        bool bIR            = uri.properties.Get("ir", false);
+        bool bRGB           = uri.properties.Get("rgb", false);
+        bool bDepth         = uri.properties.Get("depth", false);
+        bool bIR            = uri.properties.Get("ir", true);
         bool bAlign         = uri.properties.Get("align", false);
 
         OpenNIDriver* pDriver = new OpenNIDriver(

@@ -1,14 +1,12 @@
-package arpg.androidlogger;
+package arpg.nativesensorinterface;
 
 import java.io.IOException;
 
-import android.content.Context;
-import android.hardware.Camera;
 import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.os.SystemClock;
-import android.view.SurfaceHolder;
 import android.view.TextureView;
-import android.util.Log;
 
 public class NativeCameraInterface
     implements TextureView.SurfaceTextureListener {
@@ -35,6 +33,7 @@ public class NativeCameraInterface
                 }
             });
         Camera.Parameters params = mCamera.getParameters();
+
         // Ideally we'd use fixed focus, but we'll settle for infinity or macro.
         boolean found_fixed_focus = false;
         boolean found_inf_focus = false;
@@ -76,6 +75,18 @@ public class NativeCameraInterface
         mCamera.release();
     }
 
+    public void flash_on() {
+        Parameters p = mCamera.getParameters();
+        p.setFlashMode(Parameters.FLASH_MODE_TORCH);
+        mCamera.setParameters(p); 
+    }
+
+    public void flash_off() {
+        Parameters p = mCamera.getParameters();
+        p.setFlashMode(Parameters.FLASH_MODE_OFF);
+        mCamera.setParameters(p); 
+    }
+    
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface,
                                           int width, int height) {
@@ -101,7 +112,7 @@ public class NativeCameraInterface
         if (!mHasInitialImage) {
             mHasInitialImage = true;
             mInitialTimestamp = surface.getTimestamp();
-            mRealImageTime = SystemClock.elapsedRealtimeNanos();
+            mRealImageTime = SystemClock.elapsedRealtime();
         }
         mTimestamp =
             surface.getTimestamp() - mInitialTimestamp + mRealImageTime;

@@ -25,6 +25,7 @@ if(Pangolin_FOUND AND HAL_FOUND AND PbMsgs_FOUND)
   include_directories( ${HAL_INCLUDE_DIRS} )
   include_directories( ${Pangolin_INCLUDE_DIRS}
              ${PbMsgs_INCLUDE_DIRS})
+
   target_link_libraries(SensorViewer
     ${Pangolin_LIBRARIES}
     ${LINK_WHOLE_ARCHIVE_FLAG}
