@@ -191,8 +191,8 @@ bool URDFParser::ParseRobot(tinyxml2::XMLDocument& pDoc,
         /////////////////////////////////////////
         //  Raycast Car
         /////////////////////////////////////////
-        SimRaycastVehicle* pVehicle = ParseRaycastCar(sBodyName, pElement);
-        rSimRobot->SetBase(pVehicle);
+        ParseRaycastCar(sBodyName, pElement);
+        rSimRobot->SetBase(robot_models_[sBodyName].get());
         LOG(debug_level_) << "SUCCESS: built base for " << sBodyName;
       } else {
         sBodyName = sBodyName+"@"+sRobotName;
@@ -584,8 +584,8 @@ void URDFParser::ParseJoint(std::string sRobotName,
 ////////////////////////////////////////////////////////////
 /// Parse Raycast Car
 ////////////////////////////////////////////////////////////
-SimRaycastVehicle* URDFParser::ParseRaycastCar(std::string sRobotName,
-                                               tinyxml2::XMLElement *pElement) {
+void URDFParser::ParseRaycastCar(std::string sRobotName,
+                                 tinyxml2::XMLElement *pElement) {
   LOG(debug_level_) << "Building a RaycastVehicle";
   std::vector<double> vParameters;
   vParameters.resize(29);
@@ -719,17 +719,14 @@ SimRaycastVehicle* URDFParser::ParseRaycastCar(std::string sRobotName,
   Eigen::Vector6d dPose;
   dPose << pose[0], pose[1], pose[2], pose[3], pose[4], pose[5];
   std::shared_ptr<SimRaycastVehicle> pRaycastVehicle =
-      std::make_shared<SimRaycastVehicle>(sRobotName,
-                                          vParameters,
-                                          dPose);
-  if (body_mesh!= "NONE" && wheel_mesh!= "NONE") {
+      std::make_shared<SimRaycastVehicle>(sRobotName, vParameters, dPose);
+  if (body_mesh != "NONE" && wheel_mesh != "NONE") {
     pRaycastVehicle->SetMeshes(body_mesh, wheel_mesh, body_dim, wheel_dim);
   }
 
   // Build the car here.
   robot_models_[sRobotName] = pRaycastVehicle;
   LOG(debug_level_) << "SUCCESS: Built RaycastVehicle " << sRobotName;
-  return pRaycastVehicle.get();
 }
 
 

@@ -55,13 +55,10 @@ class URDFParser {
                   const std::string& sProxyName,
                   std::shared_ptr<SimRobot> m_SimRobot);
 
+  // Methods for parsing individual parts
   void ParseShape(std::string sRobotName, tinyxml2::XMLElement *pElement);
-
   void ParseJoint(std::string sRobotName, tinyxml2::XMLElement *pElement);
-
-  SimRaycastVehicle *ParseRaycastCar(std::string sRobotName,
-                                     tinyxml2::XMLElement *pElement);
-
+  void ParseRaycastCar(std::string sRobotName, tinyxml2::XMLElement *pElement);
   void ParseSensorShape(std::string sRobotName, tinyxml2::XMLElement *pElement);
 
   bool ParseCommandLineForPickSensor(std::string sCommandLine);
