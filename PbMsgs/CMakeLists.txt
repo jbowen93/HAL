@@ -105,6 +105,11 @@ if(BUILD_Velodyne)
     set(HDRS ${HDRS} Velodyne.h)
 endif()
 
+if(BUILD_RSLAM)
+    set(SRCS ${SRCS} BicycleModel.cpp)
+    set(HDRS ${HDRS} BicycleModel.h)
+endif()
+
 def_library(${LIBRARY_NAME}
   SOURCES ${SRCS} ${HDRS}
   LINK_LIBS ${LINK_LIBS}
