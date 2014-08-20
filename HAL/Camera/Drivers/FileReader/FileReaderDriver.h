@@ -40,33 +40,25 @@ class FileReaderDriver : public CameraDriverInterface {
   double _GetTimestamp(const std::string& sFileName) const;
 
  private:
-  volatile bool                                   m_bShouldRun;
-  std::shared_ptr<std::thread>                    m_CaptureThread;
+  volatile bool should_run_;
+  std::shared_ptr<std::thread> capture_thread_;
 
   // vector of lists of files
-  std::mutex                                      m_Mutex;
-  std::condition_variable                         m_cBufferEmpty;
-  std::condition_variable                         m_cBufferFull;
+  std::mutex mutex_;
+  std::condition_variable buffer_empty_, buffer_full_;
 
-  // TODO refactor using circular buffer
-  std::vector< pb::CameraMsg >                    m_vBuffer;
-  unsigned int                                    m_nHead;
-  unsigned int                                    m_nTail;
-
-  std::queue< pb::CameraMsg >                     m_qImageBuffer;
-  std::vector< std::vector< std::string > >       m_vFileList;
-  std::string                                     m_sBaseDir;
-  unsigned int                                    m_nNumChannels;
+  std::queue<pb::CameraMsg> image_buffer_;
+  std::vector<std::vector<std::string> > file_list_;
+  std::string base_dir_;
+  unsigned int num_channels_;
 
   // Current image index per channel
-  std::vector<unsigned int>                       m_nCurrentImageIndex;
-  bool                                            m_bLoop;
-  unsigned int                                    m_nBufferSize;
-  int                                             m_iCvImageReadFlags;
-  std::string                                     m_sTimeKeeper;
-  std::string                                     m_sName;
-  std::string                                     m_sId;
-  unsigned int                                    m_nFramesProcessed;
-  double                                          frequency_;
+  std::vector<unsigned int> current_image_index_;
+  bool loop_;
+  int buffer_size_;
+  int cv_image_read_flags_;
+  std::string time_keeper_, name_, id_;
+  int frames_processed_;
+  double frequency_;
 };
 }  // end namespace hal
