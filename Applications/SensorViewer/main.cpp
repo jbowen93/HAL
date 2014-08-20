@@ -7,6 +7,7 @@
 #include <HAL/Encoder/EncoderDevice.h>
 #include <HAL/LIDAR/LIDARDevice.h>
 
+#include <HAL/Devices/DeviceTime.h>
 #include <HAL/Utils/GetPot>
 #include <HAL/Utils/TicToc.h>
 
@@ -25,7 +26,7 @@ class SensorViewer {
   SensorViewer() : num_channels_(0), base_width_(0), base_height_(0),
                    has_camera_(false), has_imu_(false), has_posys_(false),
                    has_encoder_(false), has_lidar_(false),
-                   is_running_(true), is_stepping_(false), frame_number_(0),
+                   is_running_(false), is_stepping_(false), frame_number_(0),
                    panel_height_(0),
                    logger_(pb::Logger::GetInstance())
   {
@@ -103,6 +104,7 @@ class SensorViewer {
   }
 
   void Run() {
+    hal::DeviceTime::SetRealtime(true);
     RegisterCallbacks();
 
     std::vector<pangolin::GlTexture> glTex(num_channels_);
