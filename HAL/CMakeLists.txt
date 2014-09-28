@@ -1,8 +1,13 @@
-cmake_minimum_required(VERSION 2.8)
-project( HAL )
-set(VERSION_MAJOR 0)
-set(VERSION_MINOR 1)
-set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
+cmake_policy(SET CMP0048 NEW) # force new VERSION policy for cmake > 3.0
+cmake_policy(SET CMP0042 NEW) # force new MACOSX_RPATH policy for cmake > 3.0
+
+cmake_minimum_required(VERSION 3.0)
+project( HAL VERSION 0.1 )
+
+# no longer needed with project( ... VERSION X.X ) in cmake > 3.0
+#set(VERSION_MAJOR 0)
+#set(VERSION_MINOR 1)
+#set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
 
 include(def_library)
 include(export_package)
