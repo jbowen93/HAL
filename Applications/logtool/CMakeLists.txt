@@ -8,7 +8,7 @@ find_package(GFlags)
 find_package(MINIGLOG)
 find_package(OpenCV2)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -Wall  -Werror")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall  -Werror -Wno-unused-parameter -Wno-c++11-narrowing")
 
 include_directories(
   ${PbMsgs_INCLUDE_DIRS}
