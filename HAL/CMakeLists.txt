@@ -23,6 +23,7 @@ endif()
 #############################################################################
 # Find required libraries
 
+find_package(ZeroMQ REQUIRED)
 find_package(OpenCV2 REQUIRED)
 find_package(PbMsgs 2.0 REQUIRED)
 find_package(Sophus REQUIRED)
