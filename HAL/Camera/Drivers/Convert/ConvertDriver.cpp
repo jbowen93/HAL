@@ -5,258 +5,276 @@
 
 #include <opencv2/opencv.hpp>
 
-namespace hal
-{
+using namespace hal;
 
 ConvertDriver::ConvertDriver(
-    std::shared_ptr<CameraDriverInterface> Input,
-    const std::string& sFormat,
-    double dRange,
-    ImageDim dims,
-    int channel)
-  : m_Input(Input),
-    m_sFormat(sFormat),
-    m_nOutCvType(-1),
-    m_nNumChannels(Input->NumChannels()),
-    m_dRange(dRange),
-    m_Dims(dims),
-    m_iChannel(channel)
+    std::shared_ptr<CameraDriverInterface> input,
+    int channel,
+    const std::string& format,
+    ImageDim size,
+    float scale,
+    float bias
+  ) : input_(input),
+      num_channels_(input->NumChannels()),
+      channel_idx_(channel),
+      format_(format),
+      scale_(scale),
+      bias_(bias)
 {
   // Set the correct image size on the output interface, considering the request
-  // to resize the images
-  for(size_t i = 0; i < Input->NumChannels(); ++i) {
-    m_nImgWidth.push_back(Input->Width(i));
-    m_nImgHeight.push_back(Input->Height(i));
-    m_nOrigImgWidth.push_back(Input->Width(i));
-    m_nOrigImgHeight.push_back(Input->Height(i));
+  // to resize the images.
+  for(size_t ii = 0; ii < input_->NumChannels(); ++ii) {
+    img_width_.push_back(input_->Width(ii));
+    img_height_.push_back(input_->Height(ii));
+    orig_img_width_.push_back(input_->Width(ii));
+    orig_img_height_.push_back(input_->Height(ii));
 
-    if (m_iChannel != -1) {
-      if (m_iChannel != i) {
+    if (channel_idx_ != -1) {
+      if (channel_idx_ != ii) {
         continue;
       }
     }
 
-    const bool resize_requested = (m_Dims.x != 0 || m_Dims.y != 0);
-    if (resize_requested) {
-      m_nImgWidth[i] = m_Dims.x;
-      m_nImgHeight[i] = m_Dims.y;
+    // Check if image resize was requested.
+    resize_requested_ = (size.x != 0 || size.y != 0);
+    if (resize_requested_) {
+      img_width_[ii] = size.x;
+      img_height_[ii] = size.y;
     }
   }
 
-  // Guess output color coding
-  if( m_sFormat == "MONO8" ) {
-    m_nOutCvType = CV_8UC1;
-    m_nOutPbType = pb::Format::PB_LUMINANCE;
-  } else if( m_sFormat == "RGB8" ) {
-    m_nOutCvType = CV_8UC3;
-    m_nOutPbType = pb::Format::PB_RGB;
-  } else if( m_sFormat == "BGR8" ) {
-    m_nOutCvType = CV_8UC3;
-    m_nOutPbType = pb::Format::PB_BGR;
+  // Guess output color coding.
+  out_cv_format_ = -2;
+  if (format_ == "DEFAULT") {
+    out_cv_format_ = -1;
+  } else if (format_ == "MONO8") {
+    out_cv_format_ = CV_8UC1;
+    out_pb_format_ = pb::Format::PB_LUMINANCE;
+  } else if (format_ == "RGB8") {
+    out_cv_format_ = CV_8UC3;
+    out_pb_format_ = pb::Format::PB_RGB;
+  } else if (format_ == "BGR8") {
+    out_cv_format_ = CV_8UC3;
+    out_pb_format_ = pb::Format::PB_BGR;
   }
 
-  if( m_nOutCvType == -1 )
-    throw DeviceException("HAL: Error! Unknown target format: " + m_sFormat);
+  if (out_cv_format_ == -2) {
+    throw DeviceException("HAL: Error! Unknown target format: " + format_);
+  }
 }
 
-bool ConvertDriver::Capture( pb::CameraMsg& vImages )
+bool ConvertDriver::Capture(pb::CameraMsg& images)
 {
-  m_Message.Clear();
-  m_Input->Capture( m_Message );
+  message_.Clear();
+  input_->Capture(message_);
 
   // Guess source color coding.
-  if( m_nCvType.empty() ) {
-    for(int i = 0; i < m_Message.image_size(); ++i) {
-      int cvtype = -1;
-      pb::Format pbtype = m_Message.image(i).format();
+  if (cv_type_.empty()) {
+    for(int ii = 0; ii < message_.image_size(); ++ii) {
+
+      pb::Format pbtype = message_.image(ii).format();
+
       int channels = 0;
-
-      if( m_Message.image(i).format() == pb::PB_LUMINANCE )
+      if (pbtype == pb::PB_LUMINANCE) {
         channels = 1;
-      else if( m_Message.image(i).format() == pb::PB_RGB ||
-               m_Message.image(i).format() == pb::PB_BGR )
+      } else if (pbtype == pb::PB_RGB || pbtype == pb::PB_BGR) {
         channels = 3;
+      }
 
-      if( channels != 0 ) {
-        if( m_Message.image(i).type() == pb::PB_BYTE ||
-            m_Message.image(i).type() == pb::PB_UNSIGNED_BYTE )
+      int cvtype = -1;
+      if (channels != 0) {
+        if (message_.image(ii).type() == pb::PB_BYTE ||
+            message_.image(ii).type() == pb::PB_UNSIGNED_BYTE)
           cvtype = (channels == 1 ? CV_8UC1 : CV_8UC3);
-        else if( m_Message.image(i).type() == pb::PB_UNSIGNED_SHORT ||
-                 m_Message.image(i).type() == pb::PB_SHORT )
+        else if (message_.image(ii).type() == pb::PB_UNSIGNED_SHORT ||
+                 message_.image(ii).type() == pb::PB_SHORT)
           cvtype = (channels == 1 ? CV_16UC1 : CV_16UC3);
-        else if( m_Message.image(i).type() == pb::PB_FLOAT )
+        else if (message_.image(ii).type() == pb::PB_FLOAT)
           cvtype = (channels == 1 ? CV_32FC1 : CV_32FC3);
       }
 
-      m_nCvType.push_back(cvtype);
-      m_nPbType.push_back(pbtype);
+      cv_type_.push_back(cvtype);
+      pb_type_.push_back(pbtype);
 
-      if( cvtype == -1 ) {
+      if (cvtype == -1) {
         std::cerr << "HAL: Error! Could not guess source color coding of "
-                     "channel " << i << ". Is it RAW?" << std::endl;
+                     "channel " << ii << ". Is it RAW?" << std::endl;
       }
     }
   }
 
   // Prepare return images.
-  vImages.set_device_time(m_Message.device_time());
-  vImages.set_system_time(m_Message.system_time());
+  images.set_device_time(message_.device_time());
+  images.set_system_time(message_.system_time());
 
-  for(size_t ii = 0; ii < m_nNumChannels; ++ii) {
-    pb::ImageMsg* pbImg = vImages.add_image();
+  for(size_t ii = 0; ii < num_channels_; ++ii) {
+    pb::ImageMsg* pbImg = images.add_image();
 
     // If the user has specified to convert a single channel only,
     // gate it here
-    if (m_iChannel != -1) {
-      if (m_iChannel != ii) {
-        *pbImg = m_Message.image(ii);
+    if (channel_idx_ != -1) {
+      if (channel_idx_ != ii) {
+//        pbImg->Swap(message_.mutable_image(ii));
+        *pbImg = message_.image(ii);
         continue;
       }
     }
 
-    if( m_nCvType[ii] == -1 ) { // this image cannot be converted
-      *pbImg = m_Message.image(ii);
+    if (cv_type_[ii] == -1) { // This image cannot be converted.
+//      pbImg->Swap(message_.mutable_image(ii));
+      *pbImg = message_.image(ii);
       continue;
     }
 
-    const bool resize_requested = (m_Dims.x != 0 || m_Dims.y != 0);
-    size_t final_width, final_height;
-    if (resize_requested) {
-      final_width = m_Dims.x;
-      final_height = m_Dims.y;
-    } else {
-      final_width = m_nOrigImgWidth[ii];
-      final_height = m_nOrigImgHeight[ii];
-    }
-    pbImg->set_width( final_width );
-    pbImg->set_height( final_height );
-    pbImg->set_type( pb::PB_UNSIGNED_BYTE );
-    pbImg->set_format( m_nOutPbType );
-    pbImg->mutable_data()->resize(final_width * final_height *
-                                 (m_nOutCvType == CV_8UC1 ? 1 : 3) );
+    // OpenCV source image wrapper.
+    cv::Mat in_img(orig_img_height_[ii], orig_img_width_[ii], cv_type_[ii],
+                   (void*)message_.mutable_image(ii)->data().data());
 
-    pbImg->set_timestamp( m_Message.image(ii).timestamp() );
-    pbImg->set_serial_number( m_Message.image(ii).serial_number() );
 
-    cv::Mat s_origImg(m_nOrigImgHeight[ii], m_nOrigImgWidth[ii], m_nCvType[ii],
-                   (void*)m_Message.mutable_image(ii)->data().data());
-
-    cv::Mat sImg;
-    if (resize_requested) {
-      cv::resize(s_origImg, sImg, cv::Size(final_width, final_height));
-      m_nImgWidth[ii] = final_width;
-      m_nImgHeight[ii] = final_height;
-    } else {
-      sImg = s_origImg;
+    ///-------------------- RESIZE
+    if (resize_requested_) {
+      cv::Mat resized_img;
+      cv::resize(in_img, resized_img, cv::Size(img_width_[ii], img_height_[ii]));
+      in_img = resized_img;
     }
 
-    cv::Mat dImg(final_height, final_width, m_nOutCvType,
+    pbImg->set_timestamp(message_.image(ii).timestamp());
+    pbImg->set_serial_number(message_.image(ii).serial_number());
+    pbImg->set_width(img_width_[ii]);
+    pbImg->set_height(img_height_[ii]);
+
+    // If output format is default, leave image untouched.
+    if (out_cv_format_ == -1) {
+      pbImg->set_type(message_.image(ii).type());
+      pbImg->set_format(message_.image(ii).format());
+      pbImg->mutable_data()->resize(img_width_[ii] * img_height_[ii]
+                                    * CV_MAT_CN(cv_type_[ii])
+                                    * CV_MAT_DEPTH(cv_type_[ii]));
+      std::cout << "Chans: " << CV_MAT_CN(cv_type_[ii]) << std::endl;
+      std::cout << "Depth: " << CV_MAT_DEPTH(cv_type_[ii]) << std::endl;
+    } else {
+      // Otherwise the only conversion is to unsigned byte.
+      pbImg->set_type(pb::PB_UNSIGNED_BYTE);
+      pbImg->set_format(out_pb_format_);
+      pbImg->mutable_data()->resize(img_width_[ii] * img_height_[ii] *
+                                   (out_cv_format_ == CV_8UC1 ? 1 : 3) );
+    }
+
+    ///-------------------- CONVERT + BIAS + SCALE
+    // If format was left default, do not convert only apply bias + scale
+    // if applicable.
+    cv::Mat out_img(img_height_[ii], img_width_[ii], out_cv_format_,
                    (void*)pbImg->mutable_data()->data());
-
-    // note: cv::cvtColor cannot convert between depth types and
-    // cv::Mat::convertTo cannot change the number of channels
-    cv::Mat aux;
-    switch( m_nCvType[ii] ) {
-      case CV_8UC1:
-        if( m_nOutCvType == CV_8UC1 )
-          std::copy(sImg.begin<unsigned char>(), sImg.end<unsigned char>(),
-                    dImg.begin<unsigned char>());
-        else
-          cv::cvtColor(sImg, dImg,
-            (m_nOutPbType == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
-        break;
-
-      case CV_8UC3:
-        if( m_nOutCvType == CV_8UC1 )
-          cv::cvtColor(sImg, dImg,
-            (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
-        else {
-          if( m_nPbType[ii] == m_nOutPbType )
-            std::copy(sImg.begin<unsigned char>(), sImg.end<unsigned char>(),
-                      dImg.begin<unsigned char>());
+    if (out_cv_format_ == -1) {
+      if (scale_ != 1.0 && bias_ != 0.0) {
+        out_img = in_img / scale_;
+        out_img = in_img + bias_;
+      }
+    } else {
+#if 0
+      // note: cv::cvtColor cannot convert between depth types and
+      // cv::Mat::convertTo cannot change the number of channels
+      switch (cv_type_[ii]) {
+        case CV_8UC1:
+          if (out_cv_format_ == CV_8UC1)
+            std::copy(s_img.begin<unsigned char>(), s_img.end<unsigned char>(),
+                      out_img.begin<unsigned char>());
           else
-            cv::cvtColor(sImg, dImg,
-              (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
-        }
-        break;
+            cv::cvtColor(s_img, out_img,
+              (out_pb_format_ == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
+          break;
 
-      case CV_16UC1:
-        sImg.convertTo(aux, CV_64FC1);
-        if( m_nOutCvType == CV_8UC1 )
-          aux.convertTo(dImg, CV_8UC1, 255. / m_dRange);
-        else {
-          aux.convertTo(aux, CV_8UC1, 255. / m_dRange);
-          cv::cvtColor(aux, dImg,
-            (m_nOutPbType == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
-        }
-        break;
-
-      case CV_16UC3:
-        sImg.convertTo(aux, CV_64FC3);
-        if( m_nOutCvType == CV_8UC1 ) {
-          aux.convertTo(aux, CV_8UC3, 255. / m_dRange);
-          cv::cvtColor(aux, dImg,
-            (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
-        } else {
-          if( m_nPbType[ii] == m_nOutPbType )
-            aux.convertTo(dImg, CV_8UC3, 255. / m_dRange);
+        case CV_8UC3:
+          if( out_cv_format_ == CV_8UC1 )
+            cv::cvtColor(s_img, out_img,
+              (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
           else {
+            if( pb_type_[ii] == out_pb_format_ )
+              std::copy(s_img.begin<unsigned char>(), s_img.end<unsigned char>(),
+                        out_img.begin<unsigned char>());
+            else
+              cv::cvtColor(s_img, out_img,
+                (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
+          }
+          break;
+
+        case CV_16UC1:
+          s_img.convertTo(aux, CV_64FC1);
+          if( out_cv_format_ == CV_8UC1 )
+            aux.convertTo(out_img, CV_8UC1, 255. / m_dRange);
+          else {
+            aux.convertTo(aux, CV_8UC1, 255. / m_dRange);
+            cv::cvtColor(aux, out_img,
+              (out_pb_format_ == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
+          }
+          break;
+
+        case CV_16UC3:
+          s_img.convertTo(aux, CV_64FC3);
+          if( out_cv_format_ == CV_8UC1 ) {
             aux.convertTo(aux, CV_8UC3, 255. / m_dRange);
-            cv::cvtColor(aux, dImg,
-              (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
+            cv::cvtColor(aux, out_img,
+              (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
+          } else {
+            if( pb_type_[ii] == out_pb_format_ )
+              aux.convertTo(out_img, CV_8UC3, 255. / m_dRange);
+            else {
+              aux.convertTo(aux, CV_8UC3, 255. / m_dRange);
+              cv::cvtColor(aux, out_img,
+                (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
+            }
           }
-        }
-        break;
+          break;
 
-      case CV_32FC1:
-        if( m_nOutCvType == CV_8UC1 ) {
-          sImg.convertTo(dImg, CV_8UC1, 255. / m_dRange);
-        } else {
-          sImg.convertTo(aux, CV_8UC1, 255. / m_dRange);
-          cv::cvtColor(aux, dImg,
-            (m_nOutPbType == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
-        }
-        break;
-
-      case CV_32FC3:
-        if( m_nOutCvType == CV_8UC1 ) {
-          sImg.convertTo(aux, CV_8UC3, 255. / m_dRange);
-          cv::cvtColor(aux, dImg,
-            (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
-        } else {
-          if( m_nPbType[ii] == m_nOutPbType )
-            sImg.convertTo(dImg, CV_8UC3, 255. / m_dRange);
-          else {
-            sImg.convertTo(aux, CV_8UC3, 255. / m_dRange);
-            cv::cvtColor(aux, dImg,
-              (m_nPbType[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
+        case CV_32FC1:
+          if( out_cv_format_ == CV_8UC1 ) {
+            s_img.convertTo(out_img, CV_8UC1, 255. / m_dRange);
+          } else {
+            s_img.convertTo(aux, CV_8UC1, 255. / m_dRange);
+            cv::cvtColor(aux, out_img,
+              (out_pb_format_ == pb::Format::PB_RGB ? CV_GRAY2RGB : CV_GRAY2BGR));
           }
-        }
-        break;
+          break;
+
+        case CV_32FC3:
+          if( out_cv_format_ == CV_8UC1 ) {
+            s_img.convertTo(aux, CV_8UC3, 255. / m_dRange);
+            cv::cvtColor(aux, out_img,
+              (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2GRAY : CV_BGR2GRAY));
+          } else {
+            if( pb_type_[ii] == out_pb_format_ )
+              s_img.convertTo(out_img, CV_8UC3, 255. / m_dRange);
+            else {
+              s_img.convertTo(aux, CV_8UC3, 255. / m_dRange);
+              cv::cvtColor(aux, out_img,
+                (pb_type_[ii] == pb::Format::PB_RGB ? CV_RGB2BGR : CV_BGR2RGB));
+            }
+          }
+          break;
+      }
+#endif
     }
   }
 
   return true;
 }
 
-std::string ConvertDriver::GetDeviceProperty(const std::string& sProperty)
+std::string ConvertDriver::GetDeviceProperty(const std::string& property)
 {
-  return m_Input->GetDeviceProperty(sProperty);
+  return input_->GetDeviceProperty(property);
 }
 
 size_t ConvertDriver::NumChannels() const
 {
-  return m_nNumChannels;
+  return num_channels_;
 }
 
-size_t ConvertDriver::Width( size_t idx ) const
+size_t ConvertDriver::Width(size_t idx) const
 {
-  return m_nImgWidth[idx];
+  return img_width_[idx];
 }
 
-size_t ConvertDriver::Height( size_t idx ) const
+size_t ConvertDriver::Height(size_t idx) const
 {
-  return m_nImgHeight[idx];
+  return img_height_[idx];
 }
-
-} // namespace
